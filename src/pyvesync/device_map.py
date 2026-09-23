@@ -1103,7 +1103,7 @@ air_fryer_modules: list[AirFryerMap] = [
         setup_entry='CS137-AF/CS158-AF',
     ),
     AirFryerMap(
-        class_name='VeSyncAirFryerDC111S',
+        class_name='VeSyncAirFryer158',
         module=vesynckitchen,
         dev_types=['CAF-DC111S-AEU', 'CAF-DC111S-AUS', 'CAF-DC111S'],
         device_alias='Air Fryer',

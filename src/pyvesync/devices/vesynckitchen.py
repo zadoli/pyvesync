@@ -36,7 +36,6 @@ from typing_extensions import deprecated
 from pyvesync.base_devices import FryerState, VeSyncFryer
 from pyvesync.const import AIRFRYER_PID_MAP, ConnectionStatus, DeviceStatus
 from pyvesync.utils.errors import VeSyncError
-from pyvesync.utils.device_mixins import BypassV2Mixin
 from pyvesync.utils.helpers import Helpers
 from pyvesync.utils.logs import LibraryLogger
 
@@ -652,59 +651,3 @@ class VeSyncAirFryer158(VeSyncFryer):
         self.state.status_request(json_cmd)
         await self.update()
         return True
-
-
-class VeSyncAirFryerDC111S(BypassV2Mixin, VeSyncFryer):
-    """Cosori Turbo Tower Pro Smart Air Fryer (CAF-DC111S).
-
-    This model is not part of the CS137/CS158 family - it reports type `SKA`
-    with a `VS_WFON_` config module and has no entry in the Bypass V1 PID map,
-    so it is handled over the Bypass V2 endpoint instead.
-
-    The payload method names used by the app are not documented. Until one is
-    confirmed against the device, `get_details` probes the likely candidates
-    and logs each response so the working one can be identified.
-    """
-
-    __slots__ = ()
-
-    #: Candidate payload methods, tried in order until one returns code 0.
-    probe_methods: tuple[str, ...] = (
-        'getAirfryerStatus',
-        'getAirFryerStatus',
-        'getFryerStatus',
-        'getStatus',
-        'getProperty',
-    )
-
-    def __init__(
-        self,
-        details: ResponseDeviceDetailsModel,
-        manager: VeSync,
-        feature_map: AirFryerMap,
-    ) -> None:
-        """Init the Turbo Tower Pro air fryer class."""
-        super().__init__(details, manager, feature_map)
-        self.state: FryerState = FryerState(self, details, feature_map)
-
-    @deprecated('There is no on/off function for Air Fryers.')
-    async def toggle_switch(self, toggle: bool | None = None) -> bool:
-        """Turn on or off the air fryer."""
-        return toggle if toggle is not None else not self.is_on
-
-    async def get_details(self) -> None:
-        """Probe the Bypass V2 payload methods and log what the device answers."""
-        for payload_method in self.probe_methods:
-            r_dict = await self.call_bypassv2_api(payload_method)
-            logger.warning(
-                'CAF-DC111S probe - payload method %s returned: %s',
-                payload_method,
-                r_dict,
-            )
-            if isinstance(r_dict, dict) and r_dict.get('code') == 0:
-                logger.warning(
-                    'CAF-DC111S probe - %s accepted, inner result: %s',
-                    payload_method,
-                    r_dict.get('result'),
-                )
-                return
