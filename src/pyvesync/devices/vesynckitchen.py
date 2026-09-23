@@ -668,16 +668,13 @@ class VeSyncAirFryerDC111S(BypassV2Mixin, VeSyncFryer):
 
     __slots__ = ()
 
-    #: Candidate payload methods to probe, all are tried and logged.
+    #: Candidate payload methods, tried in order until one returns code 0.
     probe_methods: tuple[str, ...] = (
         'getAirfryerStatus',
         'getAirFryerStatus',
         'getFryerStatus',
         'getStatus',
-        'getDeviceStatus',
         'getProperty',
-        'getCookStatus',
-        'getAirfryerInfo',
     )
 
     def __init__(
@@ -696,26 +693,18 @@ class VeSyncAirFryerDC111S(BypassV2Mixin, VeSyncFryer):
         return toggle if toggle is not None else not self.is_on
 
     async def get_details(self) -> None:
-        """Probe the Bypass V2 payload methods and log what the device answers.
-
-        The outer response is `code: 0` whenever the request itself is well
-        formed, so the method is only accepted when the *inner* result code is
-        zero as well - an inner code such as 11030000 means the device refused
-        it.
-        """
+        """Probe the Bypass V2 payload methods and log what the device answers."""
         for payload_method in self.probe_methods:
             r_dict = await self.call_bypassv2_api(payload_method)
-            inner = r_dict.get('result') if isinstance(r_dict, dict) else None
-            inner_code = inner.get('code') if isinstance(inner, dict) else None
             logger.warning(
-                'CAF-DC111S probe - %s: outer=%s inner_code=%s inner=%s',
+                'CAF-DC111S probe - payload method %s returned: %s',
                 payload_method,
-                r_dict.get('code') if isinstance(r_dict, dict) else None,
-                inner_code,
-                inner,
+                r_dict,
             )
-            if inner_code == 0:
+            if isinstance(r_dict, dict) and r_dict.get('code') == 0:
                 logger.warning(
-                    'CAF-DC111S probe - %s ACCEPTED, result: %s', payload_method, inner
+                    'CAF-DC111S probe - %s accepted, inner result: %s',
+                    payload_method,
+                    r_dict.get('result'),
                 )
                 return
