@@ -52,6 +52,13 @@ def test_dc111_device_map() -> None:
     assert config.setup_entry == 'CAF-DC111S-AEU'
 
 
+def test_to_dict_has_state(fryer) -> None:
+    """Serialising the device needs a state object, as Home Assistant does."""
+    device_dict = fryer.to_dict()
+
+    assert device_dict['model'] == 'CAF-DC111S-AEU'
+
+
 @pytest.mark.asyncio
 async def test_get_details_reads_both_chambers(fryer) -> None:
     """Status response populates both cooking chambers."""

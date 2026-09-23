@@ -674,6 +674,7 @@ class VeSyncAirFryerDC111(BypassV2Mixin, VeSyncFryer):
     ) -> None:
         """Initialize CAF-DC111S-AEU."""
         super().__init__(details, manager, feature_map)
+        self.state: FryerState = FryerState(self, details, feature_map)
 
         self.chambers: dict[int, dict] = {}
         self.temp_unit: str | None = None
